@@ -55,7 +55,7 @@ def test_ner(results, path):
     Run perl script to evaluate model
     """
     output_file = os.path.join(path, "ner_predict.utf8")
-    with open(output_file, "w") as f:
+    with open(output_file, mode="w", encoding='u8') as f:
         to_write = []
         for block in results:
             for line in block:
@@ -167,9 +167,9 @@ def save_model(sess, model, path, logger):
     logger.info("model saved")
 
 
-def create_model(session, Model_class, path, load_vec, config, id_to_char, logger):
+def create_model(session, model_class, path, load_vec, config, id_to_char, logger):
     # create model, reuse parameters if exists
-    model = Model_class(config)
+    model = model_class(config)
 
     ckpt = tf.train.get_checkpoint_state(path)
     if ckpt and tf.train.checkpoint_exists(ckpt.model_checkpoint_path):
@@ -180,7 +180,7 @@ def create_model(session, Model_class, path, load_vec, config, id_to_char, logge
         session.run(tf.global_variables_initializer())
         if config["pre_emb"]:
             emb_weights = session.run(model.char_lookup.read_value())
-            emb_weights = load_vec(config["emb_file"],id_to_char, config["char_dim"], emb_weights)
+            emb_weights = load_vec(config["emb_file"], id_to_char, config["char_dim"], emb_weights)
             session.run(model.char_lookup.assign(emb_weights))
             logger.info("Load pre-trained embedding.")
     return model

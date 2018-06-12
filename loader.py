@@ -6,7 +6,7 @@ from data_utils import create_dico, create_mapping, zero_digits
 from data_utils import iob2, iob_iobes, get_seg_features
 
 
-def load_sentences(path, lower, zeros):
+def load_sentences(path, lower=False, zeros=False):
     """
     Load sentences. A line must contain at least a word and its tag.
     Sentences are separated by empty lines.
@@ -15,7 +15,7 @@ def load_sentences(path, lower, zeros):
     sentence = []
     num = 0
     for line in codecs.open(path, 'r', 'utf8'):
-        num+=1
+        num += 1
         line = zero_digits(line.rstrip()) if zeros else line.rstrip()
         # print(list(line))
         if not line:
@@ -29,8 +29,8 @@ def load_sentences(path, lower, zeros):
                 word = line.split()
                 # word[0] = " "
             else:
-                word= line.split()
-            assert len(word) >= 2, print([word[0]])
+                word = line.split()
+            assert len(word) >= 2, 'line %d: %s' % (num, line)
             sentence.append(word)
     if len(sentence) > 0:
         if 'DOCSTART' not in sentence[0][0]:
@@ -67,14 +67,14 @@ def char_mapping(sentences, lower):
     Create a dictionary and a mapping of words, sorted by frequency.
     """
     chars = [[x[0].lower() if lower else x[0] for x in s] for s in sentences]
-    dico = create_dico(chars)
-    dico["<PAD>"] = 10000001
-    dico['<UNK>'] = 10000000
-    char_to_id, id_to_char = create_mapping(dico)
+    dicts = create_dico(chars)
+    dicts["<PAD>"] = 10000001
+    dicts['<UNK>'] = 10000000
+    char_to_id, id_to_char = create_mapping(dicts)
     print("Found %i unique words (%i in total)" % (
-        len(dico), sum(len(x) for x in chars)
+        len(dicts), sum(len(x) for x in chars)
     ))
-    return dico, char_to_id, id_to_char
+    return dicts, char_to_id, id_to_char
 
 
 def tag_mapping(sentences):

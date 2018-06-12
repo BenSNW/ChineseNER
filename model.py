@@ -10,7 +10,7 @@ from utils import result_to_json
 from data_utils import create_input, iobes_iob
 
 
-class Model(object):
+class NERModel(object):
     def __init__(self, config):
 
         self.config = config
@@ -138,25 +138,25 @@ class Model(object):
         :param lstm_outputs: [batch_size, num_steps, emb_size] 
         :return: [batch_size, num_steps, num_tags]
         """
-        with tf.variable_scope("project"  if not name else name):
+        with tf.variable_scope("project" if not name else name):
             with tf.variable_scope("hidden"):
-                W = tf.get_variable("W", shape=[self.lstm_dim*2, self.lstm_dim],
+                w = tf.get_variable("w", shape=[self.lstm_dim*2, self.lstm_dim],
                                     dtype=tf.float32, initializer=self.initializer)
 
                 b = tf.get_variable("b", shape=[self.lstm_dim], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
                 output = tf.reshape(lstm_outputs, shape=[-1, self.lstm_dim*2])
-                hidden = tf.tanh(tf.nn.xw_plus_b(output, W, b))
+                hidden = tf.tanh(tf.nn.xw_plus_b(output, w, b))
 
             # project to score of tags
             with tf.variable_scope("logits"):
-                W = tf.get_variable("W", shape=[self.lstm_dim, self.num_tags],
+                w = tf.get_variable("w", shape=[self.lstm_dim, self.num_tags],
                                     dtype=tf.float32, initializer=self.initializer)
 
                 b = tf.get_variable("b", shape=[self.num_tags], dtype=tf.float32,
                                     initializer=tf.zeros_initializer())
 
-                pred = tf.nn.xw_plus_b(hidden, W, b)
+                pred = tf.nn.xw_plus_b(hidden, w, b)
 
             return tf.reshape(pred, [-1, self.num_steps, self.num_tags])
 
@@ -177,14 +177,14 @@ class Model(object):
             targets = tf.concat(
                 [tf.cast(self.num_tags*tf.ones([self.batch_size, 1]), tf.int32), self.targets], axis=-1)
 
-            self.trans = tf.get_variable(
+            self.transitions = tf.get_variable(
                 "transitions",
                 shape=[self.num_tags + 1, self.num_tags + 1],
                 initializer=self.initializer)
-            log_likelihood, self.trans = crf_log_likelihood(
+            log_likelihood, self.transitions = crf_log_likelihood(
                 inputs=logits,
                 tag_indices=targets,
-                transition_params=self.trans,
+                transition_params=self.transitions,
                 sequence_lengths=lengths+1)
             return tf.reduce_mean(-log_likelihood)
 
@@ -251,7 +251,7 @@ class Model(object):
         :return: evaluate result
         """
         results = []
-        trans = self.trans.eval()
+        trans = self.transitions.eval()
         for batch in data_manager.iter_batch():
             strings = batch[0]
             tags = batch[-1]
@@ -268,7 +268,7 @@ class Model(object):
         return results
 
     def evaluate_line(self, sess, inputs, id_to_tag):
-        trans = self.trans.eval()
+        trans = self.transitions.eval()
         lengths, scores = self.run_step(sess, False, inputs)
         batch_paths = self.decode(scores, lengths, trans)
         tags = [id_to_tag[idx] for idx in batch_paths[0]]
