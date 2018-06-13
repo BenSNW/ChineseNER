@@ -1,6 +1,7 @@
 # encoding=utf8
 import itertools
 import os
+import json
 import pickle
 from collections import OrderedDict
 
@@ -212,7 +213,7 @@ def evaluate_line():
             print(result)
 
 
-def evaluate_file(file):
+def evaluate_file(file, target):
     config = load_config(FLAGS.config_file)
     logger = get_logger(FLAGS.log_file)
     # limit GPU memory
@@ -222,51 +223,31 @@ def evaluate_file(file):
         char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
     with tf.Session(config=tf_config) as sess:
         model = create_model(sess, NERModel, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
-        with open(file, encoding='u8') as f:
-            for line in f:
+        with open(file, encoding='u8') as fr, open(target, mode='w', encoding='u8') as fw:
+            for line in fr:
                 result = model.evaluate_line(sess, input_from_line(line.strip(), char_to_id), id_to_tag)
                 print(result)
+                fw.write(json.dumps(result, ensure_ascii=False))
+                fw.write("\n")
 
 
-def evaluate_file_save(file, save_file):
-    config = load_config(FLAGS.config_file)
-    logger = get_logger(FLAGS.log_file)
-    # limit GPU memory
-    tf_config = tf.ConfigProto()
-    tf_config.gpu_options.allow_growth = True
-    # save path
-    save_path = open(save_file, 'w')
-    with open(FLAGS.map_file, "rb") as f:
-        char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
-    with tf.Session(config=tf_config) as sess:
-        model = create_model(sess, NERModel, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
-        with open(file, encoding='u8') as f:
-            for line in f:
-                result = model.evaluate_line(sess, input_from_line(line.strip(), char_to_id), id_to_tag)
-                save_path.write(str(result))
-                save_path.write("\n")
-
-
-def split_file(file, limit):
-    result_list = []
-    file_count = 0
-    with open(file) as f:
-        for line in f:
-            result_list.append(line)
-            if len(result_list) < limit:
-                continue
-            file_name = "data/split/"+str(file_count)+".txt"
-            with open(file_name, 'w') as file:
-                for result in result_list[:-1]:
-                    file.write(result)
-                file.write(result_list[-1].strip())
-                result_list = []
-                file_count += 1
-    if result_list:
-        file_name = "data/split/"+str(file_count)+".txt"
-        with open(file_name, 'w') as file:
-            for result in result_list:
-                file.write(result)
+# def evaluate_file_save(file, save_file):
+#     config = load_config(FLAGS.config_file)
+#     logger = get_logger(FLAGS.log_file)
+#     # limit GPU memory
+#     tf_config = tf.ConfigProto()
+#     tf_config.gpu_options.allow_growth = True
+#     # save path
+#     save_path = open(save_file, 'w')
+#     with open(FLAGS.map_file, "rb") as f:
+#         char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
+#     with tf.Session(config=tf_config) as sess:
+#         model = create_model(sess, NERModel, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
+#         with open(file, encoding='u8') as f:
+#             for line in f:
+#                 result = model.evaluate_line(sess, input_from_line(line.strip(), char_to_id), id_to_tag)
+#                 save_path.write(str(result))
+#                 save_path.write("\n")
 
 
 def main(_):
@@ -275,7 +256,8 @@ def main(_):
             clean(FLAGS)
         train()
     else:
-        evaluate_line()
+        evaluate_file('data/industry-mini.txt', 'data/industry-ner.json')
+        # evaluate_line()
 
 
 if __name__ == "__main__":

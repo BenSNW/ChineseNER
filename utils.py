@@ -186,12 +186,12 @@ def create_model(session, model_class, path, load_vec, config, id_to_char, logge
     return model
 
 
-def result_to_json(string, tags):
-    item = {"string": string, "entities": []}
+def result_to_json(text, tags):
+    item = {"text": text, "entities": []}
     entity_name = ""
     entity_start = 0
     idx = 0
-    for char, tag in zip(string, tags):
+    for char, tag in zip(text, tags):
         if tag[0] == "S":
             item["entities"].append({"word": char, "start": idx, "end": idx+1, "type":tag[2:]})
         elif tag[0] == "B":
