@@ -63,8 +63,7 @@ def test_ner(results, path):
             to_write.append("\n")
 
         f.writelines(to_write)
-    eval_lines = return_report(output_file)
-    return eval_lines
+    return return_report(output_file)
 
 
 def print_config(config, logger):

@@ -21,9 +21,9 @@ flags.DEFINE_boolean("clean", False, "clean train folder")
 flags.DEFINE_boolean("train", False, "Wither train the model")
 # configurations for the model
 # flags.DEFINE_integer("seg_dim", 20, "Embedding size for segmentation, 0 if not used")
-flags.DEFINE_integer("seg_dim", 4, "Embedding size for segmentation, 0 if not used")
+flags.DEFINE_integer("seg_dim", 20, "Embedding size for segmentation, 0 if not used")
 # flags.DEFINE_integer("char_dim", 100, "Embedding size for characters")
-flags.DEFINE_integer("char_dim", 80, "Embedding size for characters")
+flags.DEFINE_integer("char_dim", 100, "Embedding size for characters")
 # flags.DEFINE_integer("lstm_dim", 100, "Num of hidden units in LSTM")
 flags.DEFINE_integer("lstm_dim", 80, "Num of hidden units in LSTM")
 flags.DEFINE_string("tag_schema", "iobes", "tagging schema iobes or iob")
@@ -31,17 +31,17 @@ flags.DEFINE_string("tag_schema", "iobes", "tagging schema iobes or iob")
 # configurations for training
 flags.DEFINE_float("clip", 5, "Gradient clip")
 flags.DEFINE_float("dropout", 0.5, "Dropout rate")
-flags.DEFINE_integer("batch_size", 20, "batch size")
+flags.DEFINE_integer("batch_size", 32, "batch size")
 flags.DEFINE_float("lr", 0.001, "Initial learning rate")
 flags.DEFINE_string("optimizer", "adam", "Optimizer for training")
 flags.DEFINE_boolean("pre_emb", True, "Wither use pre-trained embedding")
 # flags.DEFINE_boolean("zeros",       False,      "Wither replace digits with zero")
-flags.DEFINE_boolean("zeros", True, "Wither replace digits with zero")
+flags.DEFINE_boolean("zeros", False, "Wither replace digits with zero")
 # flags.DEFINE_boolean("lower", True, "Wither lower case")
 flags.DEFINE_boolean("lower", False, "Wither lower case")
 
 # flags.DEFINE_integer("max_epoch",   100,        "maximum training epochs")
-flags.DEFINE_integer("max_epoch", 12, "maximum training epochs")
+flags.DEFINE_integer("max_epoch", 10, "maximum training epochs")
 flags.DEFINE_integer("steps_check", 100, "steps per checkpoint")
 flags.DEFINE_string("ckpt_path", "ckpt", "Path to save model")
 flags.DEFINE_string("summary_path", "summary", "Path to store summaries")
@@ -55,9 +55,13 @@ flags.DEFINE_string("emb_file", "wiki_100.utf8", "Path for pre_trained embedding
 # flags.DEFINE_string("train_file", os.path.join("data", "example.train"), "Path for train data")
 # flags.DEFINE_string("dev_file", os.path.join("data", "example.dev"), "Path for dev data")
 # flags.DEFINE_string("test_file", os.path.join("data", "example.test"), "Path for test data")
-flags.DEFINE_string("train_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train-argumented.txt', "Path for train data")
+
+flags.DEFINE_string("train_file", '../../intellij/twarp-kg/data/industry-ner-train-argumented.txt', "Path for train data")
+# flags.DEFINE_string("train_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-train.txt', "Path for train data")
 flags.DEFINE_string("dev_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
-flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for test data")
+# flags.DEFINE_string("dev_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-test.txt', "Path for dev data")
+flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
+# flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-test.txt', "Path for test data")
 
 
 FLAGS = tf.app.flags.FLAGS
@@ -90,7 +94,7 @@ def config_model(char_to_id, tag_to_id):
 
 
 def evaluate(sess, model, name, data, id_to_tag, logger):
-    logger.info("evaluate:{}".format(name))
+    logger.info("\nevaluate:{}".format(name))
     ner_results = model.evaluate(sess, data, id_to_tag)
     eval_lines = test_ner(ner_results, FLAGS.result_path)
     for line in eval_lines:
@@ -145,14 +149,12 @@ def train():
     # prepare data, get a collection of list containing index
     train_data = prepare_dataset(train_sentences, char_to_id, tag_to_id, FLAGS.lower)
     dev_data = prepare_dataset(dev_sentences, char_to_id, tag_to_id, FLAGS.lower)
-    test_data = prepare_dataset(
-        test_sentences, char_to_id, tag_to_id, FLAGS.lower
-    )
+    test_data = prepare_dataset(test_sentences, char_to_id, tag_to_id, FLAGS.lower)
     print("%i / %i / %i sentences in train / dev / test." % (len(train_data), len(dev_data), len(test_data)))
 
     train_manager = BatchManager(train_data, FLAGS.batch_size)
-    dev_manager = BatchManager(dev_data, 100)
-    test_manager = BatchManager(test_data, 100)
+    dev_manager = BatchManager(dev_data, 64)
+    test_manager = BatchManager(test_data, 64)
     # make path for store log and model if not exist
     make_path(FLAGS)
     if os.path.isfile(FLAGS.config_file):
@@ -200,14 +202,15 @@ def evaluate_line():
         char_to_id, id_to_char, tag_to_id, id_to_tag = pickle.load(f)
     with tf.Session(config=tf_config) as sess:
         model = create_model(sess, NERModel, FLAGS.ckpt_path, load_word2vec, config, id_to_char, logger)
-        while True:
-            # try:
-            #     line = input("请输入测试句子:")
-            #     result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
-            #     print(result)
-            # except Exception as e:
-            #     logger.info(e)
 
+        # txt = input("请输入文件:")
+        # with open(txt, encoding='u8') as test_file:
+        #     for line in test_file.readlines():
+        #         line = line.split(',')
+        #         result = model.evaluate_line(sess, input_from_line(line[1], char_to_id), id_to_tag)
+        #         print(result)
+
+        while True:
             line = input("请输入测试句子:")
             result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
             print(result)
@@ -229,6 +232,12 @@ def evaluate_file(file, target):
                 print(result)
                 fw.write(json.dumps(result, ensure_ascii=False))
                 fw.write("\n")
+                fw.flush()
+
+        while True:
+            line = input("请输入测试句子:")
+            result = model.evaluate_line(sess, input_from_line(line, char_to_id), id_to_tag)
+            print(result)
 
 
 # def evaluate_file_save(file, save_file):
@@ -256,8 +265,9 @@ def main(_):
             clean(FLAGS)
         train()
     else:
-        evaluate_file('data/industry-mini.txt', 'data/industry-ner.json')
-        # evaluate_line()
+        # evaluate_file('data/industry-mini.txt', 'data/industry-ner.json')
+        # evaluate_file('/Document/intellij/twarp-kg/data/industry-spider.txt', 'data/industry-ner.json')
+        evaluate_line()
 
 
 if __name__ == "__main__":

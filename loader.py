@@ -24,7 +24,7 @@ def load_sentences(path, lower=False, zeros=False):
                     sentences.append(sentence)
                 sentence = []
         else:
-            if line[0] == " ":
+            if line[0] == " " or line[0] == '\u3000':
                 line = "$" + line[1:]
                 word = line.split()
                 # word[0] = " "
@@ -107,7 +107,10 @@ def prepare_dataset(sentences, char_to_id, tag_to_id, lower=False, train=True):
                  for w in string]
         segs = get_seg_features("".join(string))
         if train:
-            tags = [tag_to_id[w[-1]] for w in s]
+            try:
+                tags = [tag_to_id[w[-1]] for w in s]
+            except KeyError:
+                print(s)
         else:
             tags = [none_index for _ in chars]
         data.append([string, chars, segs, tags])
