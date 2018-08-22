@@ -1,4 +1,5 @@
 # encoding=utf8
+
 import itertools
 import os
 import json
@@ -51,16 +52,17 @@ flags.DEFINE_string("vocab_file", "vocab.json", "File for vocab")
 flags.DEFINE_string("config_file", "config_file", "File for config")
 flags.DEFINE_string("script", "conlleval", "evaluation script")
 flags.DEFINE_string("result_path", "result", "Path for results")
-flags.DEFINE_string("emb_file", "wiki_100.utf8", "Path for pre_trained embedding")
-# flags.DEFINE_string("train_file", os.path.join("data", "example.train"), "Path for train data")
-# flags.DEFINE_string("dev_file", os.path.join("data", "example.dev"), "Path for dev data")
-# flags.DEFINE_string("test_file", os.path.join("data", "example.test"), "Path for test data")
+flags.DEFINE_string("embedding_file", "wiki_100.utf8", "Path for pre_trained embedding")
 
-flags.DEFINE_string("train_file", '../../intellij/twarp-kg/data/industry-ner-train-argumented.txt', "Path for train data")
+flags.DEFINE_string("train_file", os.path.join("data", "example.train"), "Path for train data")
+flags.DEFINE_string("dev_file", os.path.join("data", "example.dev"), "Path for dev data")
+flags.DEFINE_string("test_file", os.path.join("data", "example.test"), "Path for test data")
+
+# flags.DEFINE_string("train_file", '../../intellij/twarp-kg/data/industry-ner-train-argumented.txt', "Path for train data")
 # flags.DEFINE_string("train_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-train.txt', "Path for train data")
-flags.DEFINE_string("dev_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
+# flags.DEFINE_string("dev_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
 # flags.DEFINE_string("dev_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-test.txt', "Path for dev data")
-flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
+# flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/industry-ner-train.txt', "Path for dev data")
 # flags.DEFINE_string("test_file", 'C:/Document/intellij/twarp-kg/data/ner-msra-test.txt', "Path for test data")
 
 
@@ -81,7 +83,7 @@ def config_model(char_to_id, tag_to_id):
     config["lstm_dim"] = FLAGS.lstm_dim
     config["batch_size"] = FLAGS.batch_size
 
-    config["emb_file"] = FLAGS.emb_file
+    config["embedding_file"] = FLAGS.embedding_file
     config["clip"] = FLAGS.clip
     config["dropout_keep"] = 1.0 - FLAGS.dropout
     config["optimizer"] = FLAGS.optimizer
@@ -132,7 +134,7 @@ def train():
             dict_chars_train = char_mapping(train_sentences, FLAGS.lower)[0]
             dict_chars, char_to_id, id_to_char = augment_with_pretrained(
                 dict_chars_train.copy(),
-                FLAGS.emb_file,
+                FLAGS.embedding_file,
                 list(itertools.chain.from_iterable(
                     [[w[0] for w in s] for s in test_sentences])))
         else:
